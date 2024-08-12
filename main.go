@@ -65,10 +65,10 @@ func initialize() {
 	}
 
 	if hasOTLP {
-		telem, err = otlp.New(&config.Otlp)
-		if err != nil {
-			log.Fatalf("error initializating otlp connection: %s", err)
-		}
+		// telem, err = otlp.New(&config.Otlp)
+		// if err != nil {
+		// 	log.Fatalf("error initializating otlp connection: %s", err)
+		// }
 	}
 
 	device = sofar.NewSofarLogger(config.Inverter.LoggerSerial, port, config.Inverter.AttrWhiteList, config.Inverter.AttrBlackList)
@@ -126,12 +126,12 @@ func main() {
 		}
 
 		if hasOTLP && measurements != nil {
-			err := telem.CollectAndPushMetrics(context.Background(), measurements)
-			if err != nil {
-				log.Printf("error recording telemetry: %s\n", err)
-			} else {
-				log.Println("measurements pushed via OLTP")
-			}
+			// err := telem.CollectAndPushMetrics(context.Background(), measurements)
+			// if err != nil {
+			// 	log.Printf("error recording telemetry: %s\n", err)
+			// } else {
+			// 	log.Println("measurements pushed via OLTP")
+			// }
 
 		}
 
