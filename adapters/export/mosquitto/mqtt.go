@@ -12,11 +12,12 @@ import (
 )
 
 type MqttConfig struct {
-	Url       string  `yaml:"url"`
-	User      string  `yaml:"user"`
-	Password  string  `yaml:"password"`
-	Discovery *string `yaml:"ha_discovery_prefix,omitempty"`
-	Prefix    string  `yaml:"prefix"`
+	Url           string  `yaml:"url" envconfig:"MQTT_URL"`
+	User          string  `yaml:"user" envconfig:"MQTT_USERNAME"`
+	Password      string  `yaml:"password" envconfig:"MQTT_PASSWORD"`
+	SendDiscovery bool    `default:"false" yaml:"send_ha_discovery" envconfig:"MQTT_HA_DISCOVERY"`
+	Discovery     *string `default:"homeassistant/sensor/Sofar" yaml:"ha_discovery_prefix,omitempty" envconfig:"MQTT_HA_DISCOVERY_TOPIC_PREFIX"`
+	Prefix        string  `default:"Sofar" yaml:"prefix" envconfig:"MQTT_STATE_TOPIC_PREFIX"`
 }
 
 type Connection struct {
