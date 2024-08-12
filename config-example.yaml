@@ -31,8 +31,9 @@ mqtt:                     # MQTT disabled if url & prefix both blank
   url: 1.2.3.4:1883       # MQTT broker URL (e.g. 1.2.3.4:1883)
   user:                   # MQTT username (leave empty when not needed)
   password:               # MQTT password (leave empty when not needed)
-  ha_discovery_prefix: homeassistant/sensor   # topic prefix for Home Assistant MQTT Discovery
-  state:     energy/inverter/state  # topic for state
+  send_ha_discovery: true # Boolean to specify whether a Home Assistant Discovery MQTT message should be sent, default false
+  ha_discovery_prefix: homeassistant/sensor/Sofar   # topic prefix for Home Assistant MQTT Discovery, default homeassistant/sensor/Sofar
+  prefix: Sofar # topic prefix for sensor data, default Sofar
 
 otlp:                     # OTLP disabled if both urls blank
   grpc:

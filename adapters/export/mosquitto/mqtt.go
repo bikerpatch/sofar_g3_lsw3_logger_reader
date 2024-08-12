@@ -103,23 +103,24 @@ func unit2StateClass(unit string) string {
 }
 
 // MQTT Discovery: https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery
-func (conn *Connection) InsertDiscoveryRecord(discovery string, state string, fields []ports.DiscoveryField) error {
-	uniq := "01ad"
+func (conn *Connection) InsertDiscoveryRecord(discovery, stateTopic string, loggerSerial uint, fields []ports.DiscoveryField) error {
 	for _, f := range fields {
-		topic := fmt.Sprintf("%s/%s/config", discovery, f.Name)
+		topic := fmt.Sprintf("%s/%d_%s/config", discovery, loggerSerial, f.Name)
+		//log.Printf("Discovery topic: %s", topic)
 		json, _ := json.Marshal(map[string]interface{}{
 			"name":                  f.Name,
-			"unique_id":             fmt.Sprintf("%s_%s", f.Name, uniq),
+			"unique_id":             fmt.Sprintf("%d_%s", loggerSerial, f.Name),
 			"device_class":          unit2DeviceClass(f.Unit),
 			"state_class":           unit2StateClass(f.Unit),
-			"state_topic":           state,
+			"state_topic":           fmt.Sprintf("%s/%s", conn.prefix, stateTopic),
 			"unit_of_measurement":   f.Unit,
 			"value_template":        fmt.Sprintf("{{ value_json.%s|int * %s }}", f.Name, f.Factor),
-			"availability_topic":    state,
+			"availability_topic":    fmt.Sprintf("%s/%s", conn.prefix, stateTopic),
 			"availability_template": "{{ value_json.availability }}",
 			"device": map[string]interface{}{
-				"identifiers": [...]string{fmt.Sprintf("Inverter_%s", uniq)},
-				"name":        "Inverter",
+				"identifiers":  [...]string{fmt.Sprintf("%d_Solar_Inverter", loggerSerial)},
+				"manufacturer": "Sofar",
+				"name":         fmt.Sprintf("Sofar %d Inverter", loggerSerial),
 			},
 		})
 		conn.publish(topic, string(json), true) // MQTT Discovery messages should be retained, but in dev it can become a pain
@@ -127,12 +128,13 @@ func (conn *Connection) InsertDiscoveryRecord(discovery string, state string, fi
 	return nil
 }
 
-func (conn *Connection) InsertRecord(m map[string]interface{}) error {
+func (conn *Connection) InsertRecord(topic string, m map[string]interface{}) error {
 	json, _ := json.Marshal(m)
-	conn.publish(conn.prefix, string(json), false) // state messages should not be retained
+	//log.Printf("Record topic: %s", fmt.Sprintf("%s/%s", conn.prefix, topic))
+	conn.publish(fmt.Sprintf("%s/%s", conn.prefix, topic), string(json), false) // state messages should not be retained
 	return nil
 }
 
 func (conn *Connection) Subscribe(topic string, callback mqtt.MessageHandler) {
-	conn.client.Subscribe(topic, 0, callback)
+	conn.client.Subscribe(fmt.Sprintf("%s/%s", conn.prefix, topic), 0, callback)
 }

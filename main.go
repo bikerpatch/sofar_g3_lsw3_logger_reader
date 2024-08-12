@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	"fmt"
 	"log"
 	_ "net/http/pprof"
 	"strings"
@@ -36,9 +36,14 @@ func initialize() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	log.Printf("Config: %#v", *config)
+	log.Printf("MQTT Config: %#v", config.Mqtt)
 
 	hasMQTT = config.Mqtt.Url != "" && config.Mqtt.Prefix != ""
+	log.Printf("Has MQTT: %v", hasMQTT)
+
 	hasOTLP = config.Otlp.Grpc.Url != "" || config.Otlp.Http.Url != ""
+	log.Printf("Has GRPC: %v", hasOTLP)
 
 	if isSerialPort(config.Inverter.Port) {
 		port = serial.New(config.Inverter.Port, 2400, 8, gser.NoParity, gser.OneStopBit)
@@ -54,6 +59,9 @@ func initialize() {
 			log.Fatalf("MQTT connection failed: %s", err)
 		}
 
+		if mqtt != nil {
+			log.Printf("MQTT initialised")
+		}
 	}
 
 	if hasOTLP {
@@ -69,8 +77,14 @@ func initialize() {
 func main() {
 	initialize()
 
-	if hasMQTT && config.Mqtt.Discovery == nil {
-		_ = mqtt.InsertDiscoveryRecord(*config.Mqtt.Discovery, config.Mqtt.Prefix, device.GetDiscoveryFields()) // logs errors, always returns nil
+	mqttStateTopic := fmt.Sprintf("%d/state", config.Inverter.LoggerSerial) // the MQTT connection adds the config prefix
+
+	if hasMQTT && config.Mqtt.SendDiscovery && config.Mqtt.Discovery != nil {
+		log.Printf("Sending MQTT discovery record")
+		err := mqtt.InsertDiscoveryRecord(*config.Mqtt.Discovery, mqttStateTopic, config.Inverter.LoggerSerial, device.GetDiscoveryFields()) // logs errors, always returns nil
+		if err != nil {
+			log.Fatalf("MQTT discovery record failed: %v", err)
+		}
 	}
 
 	for {
@@ -105,7 +119,7 @@ func main() {
 					"LastTimestamp": timeStamp,
 				}
 			}
-			err := mqtt.InsertRecord(m) // logs errors, always returns nil
+			err := mqtt.InsertRecord(mqttStateTopic, m) // logs errors, always returns nil
 			if err != nil {
 				log.Printf("never happens: %s", err)
 			}
