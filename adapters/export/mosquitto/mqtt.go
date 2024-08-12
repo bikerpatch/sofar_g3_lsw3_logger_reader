@@ -89,9 +89,20 @@ func unit2DeviceClass(unit string) string {
 		return "temperature"
 	} else if strings.HasSuffix(unit, "min") {
 		return "duration"
+	} else if strings.HasSuffix(unit, "%") {
+		return "battery"
 	} else {
+		log.Printf("Unknown unit: %s", unit)
 		return ""
 	}
+}
+
+func normalisedUnit(unit string) string {
+	if strings.HasSuffix(unit, "℃") {
+		return "°C"
+	}
+
+	return unit
 }
 
 func unit2StateClass(unit string) string {
@@ -113,7 +124,7 @@ func (conn *Connection) InsertDiscoveryRecord(discovery, stateTopic string, logg
 			"device_class":          unit2DeviceClass(f.Unit),
 			"state_class":           unit2StateClass(f.Unit),
 			"state_topic":           fmt.Sprintf("%s/%s", conn.prefix, stateTopic),
-			"unit_of_measurement":   f.Unit,
+			"unit_of_measurement":   normalisedUnit(f.Unit),
 			"value_template":        fmt.Sprintf("{{ value_json.%s|int * %s }}", f.Name, f.Factor),
 			"availability_topic":    fmt.Sprintf("%s/%s", conn.prefix, stateTopic),
 			"availability_template": "{{ value_json.availability }}",
